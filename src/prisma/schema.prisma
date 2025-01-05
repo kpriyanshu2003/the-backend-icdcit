@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  age         Int
+  gender      String
+  email       String
+  firebaseUid String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  conditions      Condition[]
+  recommendations Recommendation[]
+  RiskAssessment  RiskAssessment[]
+  Appointment     Appointment[]
+}
+
+model Condition {
+  id         String   @id @default(cuid())
+  name       String
+  medication String[]
+  symptoms   String[]
+  createdAt  DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Appointment {
+  id              String   @id @default(cuid())
+  name            String
+  doctorName      String
+  appointmentDate DateTime
+  notes           String?
+  imageUrl        String?
+  createdAt       DateTime @default(now())
+
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  labResults LabResult[]
+}
+
+model LabResult {
+  id             String   @id @default(cuid())
+  name           String
+  value          Float
+  prediction     Float
+  unit           String?
+  referenceRange String?
+  createdAt      DateTime @default(now())
+
+  appointmentId String?
+  Appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+}
+
+model Recommendation {
+  id        String   @id @default(cuid())
+  message   String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model RiskAssessment {
+  id             String   @id @default(cuid())
+  riskPercent    Float
+  assessmentDate DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}

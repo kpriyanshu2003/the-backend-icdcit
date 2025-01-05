@@ -1,0 +1,32 @@
+{
+  "name": "the-backend-icdcit",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:kpriyanshu2003/the-backend-icdcit.git",
+  "author": "Kumar Priyanshu <az.priyanshu.rockstar@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "dev": "nodemon index.ts",
+    "postinstall": "prisma generate --schema ./src/prisma/schema.prisma",
+    "build": "esbuild index.ts --bundle --platform=node --outfile=dist/index.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "compression": "^1.7.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.10.5",
+    "prisma": "^6.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
