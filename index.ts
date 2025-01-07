@@ -22,7 +22,7 @@ app.use("/", router);
 app.use("/", (req: CustomRequest, res: Response) => {
   res
     .status(200)
-    .send({ status: 200, message: "Sentinel Safe API is working fine!" });
+    .send({ status: 200, message: "Digital Health API is working fine!" });
 });
 
 app.use((err: Error, req: CustomRequest, res: Response) => {

@@ -6,7 +6,10 @@ import { firebaseAuth } from "../libs/firebase-admin";
 import { s3 } from "../libs/aws";
 
 // Create a new condition and an associated appointment
-export const createCondition = async (req: CustomRequest, res: Response) => {
+export const createCondition = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
   try {
     const {
       userId,
@@ -71,7 +74,10 @@ export const createCondition = async (req: CustomRequest, res: Response) => {
 };
 
 // Get a condition by ID with brief appointment details
-export async function getConditionById(req: Request, res: Response) {
+export async function getConditionById(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { id } = req.params;
 

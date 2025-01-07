@@ -6,7 +6,10 @@ import { firebaseAuth } from "../libs/firebase-admin";
 import { s3 } from "../libs/aws";
 
 // Create a new appointment
-export const createAppointment = async (req: CustomRequest, res: Response) => {
+export const createAppointment = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
   try {
     const {
       userId,
@@ -52,7 +55,10 @@ export const createAppointment = async (req: CustomRequest, res: Response) => {
 };
 
 // Get an appointment by ID
-export const getAppointmentById = async (req: CustomRequest, res: Response) => {
+export const getAppointmentById = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
   try {
     const { appointmentId } = req.params;
 
@@ -80,7 +86,10 @@ export const getAppointmentById = async (req: CustomRequest, res: Response) => {
 };
 
 // Create a lab result for an existing appointment
-export const createLabResult = async (req: CustomRequest, res: Response) => {
+export const createLabResult = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
   try {
     const { appointmentId, name, value, prediction, unit, referenceRange } =
       req.body;

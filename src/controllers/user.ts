@@ -6,7 +6,7 @@ import { firebaseAuth } from "../libs/firebase-admin";
 import { s3 } from "../libs/aws";
 
 // TOOD : Figure out, DiseaseDiagnosis and Conditions.
-export const createUser = async (req: CustomRequest, res: Response) => {
+export const createUser = async (req: CustomRequest, res: Response): Promise<any> => {
   try {
     const { name, gender, dob, height, weight, bmi, diagnosedDiseases } =
       req.body;
@@ -75,7 +75,7 @@ export const createUser = async (req: CustomRequest, res: Response) => {
   }
 };
 
-export async function sampleUser(req: CustomRequest, res: Response) {
+export async function sampleUser(req: CustomRequest, res: Response): Promise<any> {
   try {
     // Your logic here
     // Example: check if user is authenticated

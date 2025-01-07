@@ -12,7 +12,7 @@
     "build": "esbuild index.ts --bundle --platform=node --outfile=dist/index.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.1.0",
+    "@prisma/client": "^6.2.0",
     "aws-sdk": "^2.1692.0",
     "compression": "^1.7.5",
     "cors": "^2.8.5",
@@ -29,7 +29,7 @@
     "@types/morgan": "^1.9.9",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.5",
-    "prisma": "^6.1.0",
+    "prisma": "^6.2.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
