@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-app.use(router);
+app.use("/", router);
 app.use("/", (req: CustomRequest, res: Response) => {
   res
     .status(200)

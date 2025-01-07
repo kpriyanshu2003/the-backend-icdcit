@@ -1,8 +1,10 @@
 import express from "express";
+const route = express.Router();
+
 import { authToken } from "../middlewares/auth";
-import { createUser } from "../controllers/user";
-const router = express.Router();
+import { createUser, sampleUser } from "../controllers/user";
 
-router.post("/", authToken, createUser);
+route.post("/", authToken, createUser);
+route.get("/", sampleUser);
 
-export default router;
+export default route;

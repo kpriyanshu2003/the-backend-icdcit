@@ -74,3 +74,24 @@ export const createUser = async (req: CustomRequest, res: Response) => {
     res.status(500).send(new CustomResponse("Internal Server Error"));
   }
 };
+
+export async function sampleUser(req: CustomRequest, res: Response) {
+  try {
+    // Your logic here
+    // Example: check if user is authenticated
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Assume we create a condition here
+    const condition = {
+      /* your condition object */
+    };
+
+    return res
+      .status(201)
+      .json({ message: "Condition created successfully", condition });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}

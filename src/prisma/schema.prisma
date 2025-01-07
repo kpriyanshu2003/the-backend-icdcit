@@ -38,22 +38,26 @@ model Condition {
   imageUrl   String?
   createdAt  DateTime @default(now())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  Appointments Appointment[]
 }
 
 model Appointment {
-  id              String   @id @default(cuid())
+  id              String              @id @default(cuid())
   name            String
   doctorName      String
   appointmentDate DateTime
   notes           String?
   imageUrl        String?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime            @default(now())
+  category        AppointmentCategory
 
-  userId     String
-  user       User        @relation(fields: [userId], references: [id])
-  labResults LabResult[]
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  conditionId String?
+  Condition   Condition?  @relation(fields: [conditionId], references: [id])
+  labResults  LabResult[]
 }
 
 model LabResult {
@@ -85,4 +89,14 @@ model RiskAssessment {
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
+}
+
+enum AppointmentCategory {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ANNUALLY
+  QUARTERLY
+  BI_ANNUALLY
+  AS_NEEDED
 }
