@@ -2,7 +2,6 @@ import { Response, Request } from "express";
 import { CustomRequest } from "../@types/express";
 import { CustomResponse } from "../@types/custom-response";
 import { prisma } from "../..";
-import { firebaseAuth } from "../libs/firebase-admin";
 import { s3 } from "../libs/aws";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
@@ -128,6 +127,24 @@ export const addConditionWithAppointments = async (
           appointmentImageKey
         );
 
+        let labResult = null;
+        if (appointment.labResults && appointment.labResults.name) {
+          labResult = await prisma.labResult.findFirst({
+            where: { name: appointment.labResults.name },
+          });
+
+          if (labResult) {
+            await prisma.labResult.update({
+              where: { id: labResult.id },
+              data: { ...appointment.labResults },
+            });
+          } else {
+            await prisma.labResult.create({
+              data: { ...appointment.labResults },
+            });
+          }
+        }
+
         return {
           name: appointment.name,
           appointmentDate: new Date(appointment.appointmentDate),
@@ -135,6 +152,7 @@ export const addConditionWithAppointments = async (
           imageUrl: appointmentImageUrl,
           category: appointment.category,
           userId: userId,
+          labResults: labResult,
         };
       })
     );
