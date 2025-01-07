@@ -130,3 +130,23 @@ export const createLabResult = async (
     res.status(500).send(new CustomResponse("Internal server error"));
   }
 };
+
+
+export const getAllAppointments = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
+  try {
+    const appointments = await prisma.appointment.findMany({
+      include: {
+        labResults: true,
+      },
+    });
+
+    res.status(200).json({ appointments });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(new CustomResponse("Internal server error"));
+  }
+};
+
