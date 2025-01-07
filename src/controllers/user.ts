@@ -2,33 +2,20 @@ import { Response } from "express";
 import { CustomRequest } from "../@types/express";
 import { CustomResponse } from "../@types/custom-response";
 import { prisma } from "../..";
-import { firebaseAuth } from "../libs/firebase-admin";
-import { s3 } from "../libs/aws";
 
-// TOOD : Figure out, DiseaseDiagnosis and Conditions.
-export const createUser = async (req: CustomRequest, res: Response): Promise<any> => {
+export const createUser = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
   try {
-    const { name, gender, dob, height, weight, bmi, diagnosedDiseases } =
-      req.body;
-    // height, weight, bmi : { value, unit}
-    // TODO : Add validations
+    const { name, age, height, weight, bmi } = req.body;
     if (!req.user)
       return res.status(400).send(new CustomResponse("Invalid Token"));
+    if (!name || !age || !height || !weight || !bmi)
+      return res
+        .status(400)
+        .send(new CustomResponse("Give all the req fields."));
 
-    // AWS S3 Uploads
-    let imageUrl;
-    if (req.file) {
-      const params = {
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: `appointment-images/${Date.now()}-${req.file.originalname}`,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-      };
-      const uploadResult = await s3.upload(params).promise();
-      imageUrl = uploadResult.Location;
-    }
-
-    // Create User
     const firebaseUser = req.user;
     const { email, uid } = firebaseUser;
     if (!email || !uid)
@@ -36,38 +23,15 @@ export const createUser = async (req: CustomRequest, res: Response): Promise<any
     const user = await prisma.user.create({
       data: {
         name,
-        dob,
-        gender,
+        age,
         email,
         uid,
-        conditions: {
-          create: diagnosedDiseases
-            ? diagnosedDiseases.map((disease) => ({
-                name: disease.name,
-                medication: disease.medication || [],
-                symptoms: disease.symptoms || [],
-                notes: disease.notes || "",
-              }))
-            : [],
-        },
-        appointment: {
-          create: {
-            name: `${name}'s Initial Appointment`,
-            doctorName: "Default Doctor",
-            appointmentDate: new Date(),
-            imageUrl,
-            labResults: {
-              create: [
-                { name: "Height", value: height.value, unit: height.unit },
-                { name: "Weight", value: height.value, unit: weight.unit },
-                { name: "BMI", value: bmi.value, unit: bmi.unit },
-              ],
-            },
-          },
-        },
+        height,
+        weight,
+        bmi,
       },
     });
-
+    console.log("User created:", user);
     res.status(201).send(new CustomResponse("User created successfully"));
   } catch (error) {
     console.error(error);
@@ -75,10 +39,11 @@ export const createUser = async (req: CustomRequest, res: Response): Promise<any
   }
 };
 
-export async function sampleUser(req: CustomRequest, res: Response): Promise<any> {
+export async function sampleUser(
+  req: CustomRequest,
+  res: Response
+): Promise<any> {
   try {
-    // Your logic here
-    // Example: check if user is authenticated
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -95,3 +60,59 @@ export async function sampleUser(req: CustomRequest, res: Response): Promise<any
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
+export const createUserWithEmailPassword = async (
+  req: CustomRequest,
+  res: Response
+) => {
+  try {
+    const { name, email, password, age, height, weight, bmi } = req.body;
+    if (!name || !email || !password || !age || !height || !weight || !bmi) {
+      return res
+        .status(400)
+        .send(new CustomResponse("Give all the req fields."));
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        age,
+        email,
+        uid: password,
+        height,
+        weight,
+        bmi,
+      },
+    });
+
+    console.log("User created:", user);
+    res.status(201).send(new CustomResponse("User created successfully"));
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(new CustomResponse("Internal Server Error"));
+  }
+};
+
+export const loginUser = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res
+        .status(400)
+        .send(new CustomResponse("Give all the req fields."));
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        uid: password,
+      },
+    });
+    if (!user) return res.status(400).send(new CustomResponse("Invalid user"));
+    res.status(200).send(new CustomResponse("User logged in successfully"));
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(new CustomResponse("Internal Server Error"));
+  }
+};

@@ -15,9 +15,12 @@ datasource db {
 
 model User {
   id        String   @id @default(cuid())
-  name      String
-  dob       DateTime
-  gender    String
+  age       Int
+  gender    String?
+  height    String
+  weight    String
+
+  bmi       Float
   email     String
   uid       String   @unique
   createdAt DateTime @default(now())
@@ -46,7 +49,7 @@ model Condition {
 model Appointment {
   id              String              @id @default(cuid())
   name            String
-  doctorName      String
+  doctorName      String?
   appointmentDate DateTime
   notes           String?
   imageUrl        String?

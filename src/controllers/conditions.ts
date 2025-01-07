@@ -4,7 +4,8 @@ import { CustomResponse } from "../@types/custom-response";
 import { prisma } from "../..";
 import { firebaseAuth } from "../libs/firebase-admin";
 import { s3 } from "../libs/aws";
-
+import sharp from "sharp";
+import { v4 as uuidv4 } from "uuid";
 // Create a new condition and an associated appointment
 export const createCondition = async (
   req: CustomRequest,
@@ -111,3 +112,76 @@ export async function getConditionById(
     res.status(500).send(new CustomResponse("Internal server error"));
   }
 }
+
+export const addConditionWithAppointments = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { userId, name, medication, symptoms, notes, appointments } =
+      req.body;
+    const processedAppointments = await Promise.all(
+      appointments.map(async (appointment: any) => {
+        const appointmentImageKey = `appointments/${uuidv4()}.jpeg`;
+        const appointmentImageUrl = await uploadImageToS3(
+          appointment.image,
+          appointmentImageKey
+        );
+
+        return {
+          name: appointment.name,
+          appointmentDate: new Date(appointment.appointmentDate),
+          notes: appointment.notes,
+          imageUrl: appointmentImageUrl,
+          category: appointment.category,
+          userId: userId,
+        };
+      })
+    );
+
+    const condition = await prisma.condition.create({
+      data: {
+        name,
+        medication,
+        symptoms,
+        notes,
+        userId,
+        Appointments: {
+          create: processedAppointments,
+        },
+      },
+    });
+
+    res.status(200).json({
+      message: "disease and appointments added successfully",
+      condition,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error adding condition and appointments" });
+  }
+};
+
+const uploadImageToS3 = async (
+  base64Image: string,
+  key: string
+): Promise<string> => {
+  const compressedImageBuffer = await sharp(Buffer.from(base64Image, "base64"))
+    .resize(500, 500, { fit: "inside" })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  if (!process.env.AWS_S3_BUCKET) {
+    throw new Error("AWS not configured");
+  }
+  const webpKey = key.replace(/\.\w+$/, ".webp");
+  const s3Params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: webpKey,
+    Body: compressedImageBuffer,
+    ContentType: "image/webp",
+  };
+
+  const s3Response = await s3.upload(s3Params).promise();
+  return s3Response.Location;
+};

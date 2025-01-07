@@ -10,7 +10,7 @@ export const authToken = async (
   req: CustomRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<any> => {
   try {
     let token = "";
     if (!req.headers.authorization)
@@ -21,7 +21,7 @@ export const authToken = async (
     if (token === process.env.TOKEN) return next();
     const user = await firebaseAuth.verifyIdToken(token);
     if (user) {
-      // console.log(user);
+      console.log(user);
       req.user = user;
       return next();
     }
