@@ -203,3 +203,55 @@ const uploadImageToS3 = async (
   const s3Response = await s3.upload(s3Params).promise();
   return s3Response.Location;
 };
+
+
+
+
+export const getConditions = async (req: Request, res: Response) => {
+  try {
+    const conditions = await prisma.condition.findMany({
+      include: {
+        Appointments: true,
+      },
+    });
+    res.status(200).send(new CustomResponse("Conditions fetched", conditions));
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(new CustomResponse("Internal server error"));
+  }
+};
+
+export const getConditionsByUserId = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    if (!userId) {
+      return res
+        .status(400)
+        .send(new CustomResponse("Required Field: User ID"));
+    }
+
+    const conditions = await prisma.condition.findMany({
+      where: { userId },
+      include: {
+        Appointments: true,
+      },
+    });
+    res.status(200).send(new CustomResponse("Conditions fetched", conditions));
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(new CustomResponse("Internal server error"));
+  }
+};
+
+
+
+export const getlabResults = async (req: Request, res: Response) => {
+  try {
+    const labResults = await prisma.labResult.findMany();
+    res.status(200).send(new CustomResponse("Lab results fetched", labResults));
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(new CustomResponse("Internal server error"));
+  }
+};
+

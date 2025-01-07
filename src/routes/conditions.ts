@@ -3,6 +3,8 @@ import {
   createCondition,
   getConditionById,
   addConditionWithAppointments,
+  getConditions,
+  getlabResults
 } from "../controllers/conditions";
 import { authToken } from "../middlewares/auth";
 import upload from "../libs/multer";
@@ -16,4 +18,6 @@ router.post(
   upload.array("appointments[]"),
   addConditionWithAppointments
 );
+router.get("/", getConditions);
+router.get("/lab-results", getlabResults);
 export default router;
