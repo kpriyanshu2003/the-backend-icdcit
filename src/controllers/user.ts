@@ -64,7 +64,8 @@ export async function sampleUser(
 export const createUserWithEmailPassword = async (
   req: CustomRequest,
   res: Response
-) => {
+):
+Promise<any> => {
   try {
     const { name, email, password, age, height, weight, bmi } = req.body;
     if (!name || !email || !password || !age || !height || !weight || !bmi) {
