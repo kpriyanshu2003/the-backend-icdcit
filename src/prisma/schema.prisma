@@ -14,19 +14,19 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  name        String
-  age         Int
-  gender      String
-  email       String
-  firebaseUid String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  dob       DateTime
+  gender    String
+  email     String
+  uid       String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   conditions      Condition[]
   recommendations Recommendation[]
-  RiskAssessment  RiskAssessment[]
-  Appointment     Appointment[]
+  riskAssessment  RiskAssessment[]
+  appointment     Appointment[]
 }
 
 model Condition {
@@ -34,6 +34,8 @@ model Condition {
   name       String
   medication String[]
   symptoms   String[]
+  notes      String?
+  imageUrl   String?
   createdAt  DateTime @default(now())
 
   userId String
@@ -58,7 +60,7 @@ model LabResult {
   id             String   @id @default(cuid())
   name           String
   value          Float
-  prediction     Float
+  prediction     Float?
   unit           String?
   referenceRange String?
   createdAt      DateTime @default(now())
