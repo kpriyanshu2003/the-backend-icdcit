@@ -1,47 +1,63 @@
-import multer from "multer";
-import { s3 } from "../libs/aws";
-import sharp from "sharp";
-import { CompressImage } from "./compress";
+import { readFile } from "node:fs/promises";
 
-// const abc = multer({
-//   // https://github.com/expressjs/multer
-//   dest: "./public/uploads/",
-//   limits: { fileSize: 100000 },
-//   rename: function (fieldname, filename) {
-//     return filename.replace(/\W+/g, "-").toLowerCase();
-//   },
-//   onFileUploadData: function (file, data, req, res) {
-//     // file : { fieldname, originalname, name, encoding, mimetype, path, extension, size, truncated, buffer }
-//     var params = {
-//       Bucket: "makersquest",
-//       Key: file.name,
-//       Body: data,
-//     };
+import {
+  PutObjectCommand,
+  S3Client,
+  S3ServiceException,
+} from "@aws-sdk/client-s3";
+import { aws } from "../libs/aws";
 
-//     s3.putObject(params, function (perr, pres) {
-//       if (perr) {
-//         console.log("Error uploading data: ", perr);
-//       } else {
-//         console.log("Successfully uploaded data to myBucket/myKey");
-//       }
-//     });
-//   },
-// });
+const bucketName = process.env.AWS_S3_BUCKET || "";
+const region = process.env.AWS_REGION || "";
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID || "";
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || "";
+/**
+ * Upload a file to an S3 bucket.
+ * @param {{ bucketName: string, key: string, filePath: string }}
+ */
+export const uploadToS3 = async ({
+  key,
+  filePath,
+}: {
+  key: string;
+  filePath: string;
+}) => {
+  if (!bucketName) throw new Error("AWS S3 bucket name not provided");
+  if (!region) throw new Error("AWS region not provided");
+  if (!accessKeyId) throw new Error("AWS access key ID not provided");
+  if (!secretAccessKey) throw new Error("AWS secret access key not provided");
 
-export const uploadImageToS3 = async (
-  base64Image: Buffer,
-  key: string
-): Promise<string> => {
-  if (!process.env.AWS_S3_BUCKET) throw new Error("AWS not configured");
+  const client = new S3Client({
+    region,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+    Body: await readFile(filePath),
+  });
 
-  const webpKey = key.replace(/\.\w+$/, ".webp");
-  const s3Params = {
-    Bucket: process.env.AWS_S3_BUCKET,
-    Key: webpKey,
-    Body: CompressImage(base64Image, "./uploads"),
-    ContentType: "image/webp",
-  };
-
-  const s3Response = await s3.upload(s3Params).promise();
-  return s3Response.Location;
+  try {
+    const response = await client.send(command);
+  } catch (caught) {
+    if (
+      caught instanceof S3ServiceException &&
+      caught.name === "EntityTooLarge"
+    ) {
+      console.error(
+        `Error from S3 while uploading object to ${bucketName}. \
+The object was too large. To upload objects larger than 5GB, use the S3 console (160GB max) \
+or the multipart upload API (5TB max).`
+      );
+    } else if (caught instanceof S3ServiceException) {
+      console.error(
+        `Error from S3 while uploading object to ${bucketName}.  ${caught.name}: ${caught.message}`
+      );
+    } else {
+      throw caught;
+    }
+  }
 };

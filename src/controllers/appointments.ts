@@ -3,7 +3,6 @@ import { CustomRequest } from "../@types/express";
 import { CustomResponse } from "../@types/custom-response";
 import { prisma } from "../..";
 import { firebaseAuth } from "../libs/firebase-admin";
-import { s3 } from "../libs/aws";
 
 // Create a new appointment
 export const createAppointment = async (
@@ -94,16 +93,13 @@ export const createLabResult = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { appointmentId, name, value, prediction, unit, referenceRange } =
-      req.body;
+    const { appointmentId, result } = req.body;
 
     // Validate required fields
-    if (!appointmentId || !name || value === undefined) {
+    if (!appointmentId || !result) {
       return res
         .status(400)
-        .send(
-          new CustomResponse("Required Fields: appointmentId, name, value")
-        );
+        .send(new CustomResponse("Required Fields: appointmentId, result"));
     }
 
     // Verify if the appointment exists
@@ -115,15 +111,11 @@ export const createLabResult = async (
       return res.status(404).send(new CustomResponse("Appointment not found"));
 
     // Create the lab result
-    const labResult = await prisma.labResult.create({
-      data: {
-        name,
-        value,
-        prediction: prediction || null,
-        unit: unit || "",
-        referenceRange: referenceRange || "",
+    const labResult = await prisma.labResult.createMany({
+      data: result.map((r: any) => ({
+        ...r,
         appointmentId,
-      },
+      })),
     });
 
     res.status(201).send(new CustomResponse("Lab result created successfully"));

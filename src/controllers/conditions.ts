@@ -2,7 +2,6 @@ import { Response, Request } from "express";
 import { CustomRequest } from "../@types/express";
 import { CustomResponse } from "../@types/custom-response";
 import { prisma } from "../..";
-import { s3 } from "../libs/aws";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 // import { uploadImageToS3 } from "../util/upload-s3";

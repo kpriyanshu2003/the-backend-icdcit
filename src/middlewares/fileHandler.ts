@@ -6,6 +6,7 @@ import path from "path";
 import sharp from "sharp";
 import fs from "fs/promises";
 import { CustomResponse } from "../@types/custom-response";
+import { uploadToS3 } from "../util/upload-s3";
 
 export async function FileHandler(
   req: CustomRequest,
@@ -20,11 +21,8 @@ export async function FileHandler(
     const compressedFilename = `${uuidv4()}.webp`;
     const finalPath = path.join(__dirname, "../uploads", compressedFilename);
 
-    await sharp(tempFilePath)
-      .resize(800, 800, { fit: "inside" })
-      .webp({ quality: 80 })
-      .toFile(finalPath);
-
+    await CompressImage(tempFilePath, finalPath);
+    await uploadToS3({ key: compressedFilename, filePath: finalPath });
     await fs.unlink(tempFilePath);
 
     next();
