@@ -11,7 +11,7 @@ export const createUser = async (
     const { age, height, weight, bmi } = req.body;
     if (!req.user)
       return res.status(400).send(new CustomResponse("Invalid Token"));
-    if ( !age || !height || !weight || !bmi)
+    if (!age || !height || !weight || !bmi)
       return res
         .status(400)
         .send(new CustomResponse("Give all the req fields."));
@@ -21,7 +21,7 @@ export const createUser = async (
     if (!email || !uid)
       return res.status(400).send(new CustomResponse("Invalid Token"));
     const user = await prisma.user.create({
-      data: {  
+      data: {
         age,
         email,
         uid,
@@ -38,33 +38,10 @@ export const createUser = async (
   }
 };
 
-export async function sampleUser(
-  req: CustomRequest,
-  res: Response
-): Promise<any> {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    // Assume we create a condition here
-    const condition = {
-      /* your condition object */
-    };
-
-    return res
-      .status(201)
-      .json({ message: "Condition created successfully", condition });
-  } catch (error) {
-    return res.status(500).json({ message: "Internal server error" });
-  }
-}
-
 export const createUserWithEmailPassword = async (
   req: CustomRequest,
   res: Response
-):
-Promise<any> => {
+): Promise<any> => {
   try {
     const { name, email, password, age, height, weight, bmi } = req.body;
     if (!name || !email || !password || !age || !height || !weight || !bmi) {
