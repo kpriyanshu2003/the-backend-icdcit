@@ -5,10 +5,11 @@ import userRoutes from "./user";
 import conditionsRoutes from "./conditions";
 import appointmentRoutes from "./appointments";
 import aggregateRoutes from "./aggregate";
+import { authToken } from "../middlewares/auth";
 
-router.use("/user", userRoutes);
-router.use("/conditions", conditionsRoutes);
-router.use("/appointments", appointmentRoutes);
-router.use("/aggregate", aggregateRoutes);
+router.use("/user", authToken, userRoutes);
+router.use("/conditions", authToken, conditionsRoutes);
+router.use("/appointments", authToken, appointmentRoutes);
+// router.use("/aggregate", authToken, aggregateRoutes);
 
 export default router;
