@@ -1,7 +1,6 @@
 {
   "name": "the-backend-icdcit",
   "version": "1.0.0",
-  "main": "index.js",
   "repository": "git@github.com:kpriyanshu2003/the-backend-icdcit.git",
   "author": "Kumar Priyanshu <az.priyanshu.rockstar@gmail.com>",
   "license": "MIT",

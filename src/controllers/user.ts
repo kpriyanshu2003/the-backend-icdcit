@@ -30,7 +30,7 @@ export const createUser = async (
         bmi,
       },
     });
-    console.log("User created:", user);
+    // console.log("User created:", user);
     res.status(201).send(new CustomResponse("User created successfully"));
   } catch (error) {
     console.error(error);

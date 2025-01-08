@@ -5,6 +5,7 @@ import { prisma } from "../..";
 import { s3 } from "../libs/aws";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
+
 // Create a new condition and an associated appointment
 export const createCondition = async (
   req: CustomRequest,
@@ -12,7 +13,6 @@ export const createCondition = async (
 ): Promise<any> => {
   try {
     const {
-      userId,
       name,
       medication,
       symptoms,
@@ -24,32 +24,32 @@ export const createCondition = async (
     } = req.body;
 
     // Validate required fields
-    if (
-      !userId ||
-      !name ||
-      !medication ||
-      !symptoms ||
-      !doctorName ||
-      !appointmentDate
-    ) {
+    if (!name || !medication || !symptoms || !doctorName || !appointmentDate) {
       return res
         .status(400)
         .send(
           new CustomResponse(
-            "Required fields: userId, name, medication, symptoms, doctorName, appointmentDate"
+            "Required fields:  name, medication, symptoms, doctorName, appointmentDate"
           )
         );
     }
 
+    const user = await prisma.user.findUnique({
+      where: { uid: req.user?.uid },
+    });
+
+    if (!req.user || !user)
+      return res.status(401).send(new CustomResponse("Unauthorisedd"));
+
     // Create the condition and its associated appointment in a transaction
     const condition = await prisma.condition.create({
       data: {
+        userId: user.id,
         name,
         medication,
         symptoms,
         notes,
         imageUrl,
-        userId,
         Appointments: {
           create: {
             name: `Follow-up for ${name}`,
@@ -57,7 +57,7 @@ export const createCondition = async (
             appointmentDate: new Date(appointmentDate),
             notes: appointmentNotes || "",
             category: "AS_NEEDED",
-            userId,
+            userId: user.id,
           },
         },
       },
@@ -75,22 +75,25 @@ export const createCondition = async (
 
 // Get a condition by ID with brief appointment details
 export async function getConditionById(
-  req: Request,
+  req: CustomRequest,
   res: Response
 ): Promise<any> {
   try {
     const { id } = req.params;
-
-    // Validate the condition ID
-    if (!id) {
+    if (!id)
       return res
         .status(400)
         .send(new CustomResponse("Required Field: Condition ID"));
-    }
+    const firebaseUser = req.user;
+    const user = await prisma.user.findUnique({
+      where: { uid: firebaseUser?.uid },
+    });
+    if (!user) return res.status(401).send(new CustomResponse("Unauthorised"));
+    // Validate the condition ID
 
     // Fetch the condition with its related appointment
     const condition = await prisma.condition.findUnique({
-      where: { id },
+      where: { id, userId: user.id },
       include: {
         Appointments: {
           select: {
@@ -113,11 +116,15 @@ export async function getConditionById(
 }
 
 export const addConditionWithAppointments = async (
-  req: Request,
+  req: CustomRequest,
   res: Response
 ): Promise<any> => {
   try {
-    const { userId, name, medication,symptoms, notes, appointments } =req.body;
+    const { name, medication, symptoms, notes, appointments } = req.body;
+    const user = await prisma.user.findUnique({
+      where: { uid: req.user?.uid },
+    });
+    if (!user) return res.status(401).send(new CustomResponse("Unauthorised"));
     const processedAppointments = await Promise.all(
       appointments.map(async (appointment: any) => {
         const appointmentImageKey = `appointments/${uuidv4()}.jpeg`;
@@ -125,7 +132,7 @@ export const addConditionWithAppointments = async (
           appointment.image,
           appointmentImageKey
         );
-        // if (appointment.isDigital)  
+        // if (appointment.isDigital)
         // {
         //   const {symptoms,medication,doctorName,}
         // }
@@ -149,7 +156,6 @@ export const addConditionWithAppointments = async (
         }
 
         //TODO: Add to flask server OCR
-        
 
         return {
           name: appointment.name,
@@ -157,7 +163,7 @@ export const addConditionWithAppointments = async (
           notes: appointment.notes,
           imageUrl: appointmentImageUrl,
           category: appointment.category,
-          userId: userId,
+          userId: user.id,
           labResults: labResult,
         };
       })
@@ -169,7 +175,7 @@ export const addConditionWithAppointments = async (
         medication,
         symptoms,
         notes,
-        userId,
+        userId: user.id,
         Appointments: {
           create: processedAppointments,
         },
@@ -210,15 +216,20 @@ const uploadImageToS3 = async (
   return s3Response.Location;
 };
 
-
-
-
-export const getConditions = async (req: Request, res: Response) => {
+export const getConditions = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
   try {
+    const firebaseUser = req.user;
+    const user = await prisma.user.findUnique({
+      where: { uid: firebaseUser?.uid },
+    });
+    console.log(user);
+    if (!user) return res.status(401).send(new CustomResponse("Unauthorisedd"));
     const conditions = await prisma.condition.findMany({
-      include: {
-        Appointments: true,
-      },
+      where: { userId: user.id },
+      include: { Appointments: true },
     });
     res.status(200).send(new CustomResponse("Conditions fetched", conditions));
   } catch (error) {
@@ -249,15 +260,23 @@ export const getConditionsByUserId = async (req: Request, res: Response) => {
   }
 };
 
-
-
-export const getlabResults = async (req: Request, res: Response) => {
+export const getlabResults = async (
+  req: CustomRequest,
+  res: Response
+): Promise<any> => {
   try {
-    const labResults = await prisma.labResult.findMany();
+    const user = await prisma.user.findUnique({
+      where: { uid: req.user?.id },
+    });
+
+    if (!user) return res.status(401).send(new CustomResponse("Unauthorised"));
+
+    const labResults = await prisma.labResult.findMany({
+      where: { userId: user.id },
+    });
     res.status(200).send(new CustomResponse("Lab results fetched", labResults));
   } catch (error) {
     console.error(error);
     res.status(500).send(new CustomResponse("Internal server error"));
   }
 };
-

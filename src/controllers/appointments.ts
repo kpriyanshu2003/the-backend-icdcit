@@ -11,18 +11,11 @@ export const createAppointment = async (
   res: Response
 ): Promise<any> => {
   try {
-    const {
-      userId,
-      name,
-      doctorName,
-      appointmentDate,
-      notes,
-      imageUrl,
-      category,
-    } = req.body;
+    const { name, doctorName, appointmentDate, notes, imageUrl, category } =
+      req.body;
 
     // Validate required fields
-    if (!userId || !name || !doctorName || !appointmentDate || !category) {
+    if (!name || !doctorName || !appointmentDate || !category) {
       return res
         .status(400)
         .send(
@@ -31,6 +24,13 @@ export const createAppointment = async (
           )
         );
     }
+
+    const user = await prisma.user.findUnique({
+      where: { uid: req.user?.uid },
+    });
+
+    if (!req.user || !user)
+      return res.status(401).send(new CustomResponse("Unauthorised"));
 
     // Create the appointment
     const appointment = await prisma.appointment.create({
@@ -41,7 +41,7 @@ export const createAppointment = async (
         notes: notes || "",
         imageUrl: imageUrl || "",
         category,
-        userId,
+        userId: user.id,
       },
     });
 
@@ -60,23 +60,26 @@ export const getAppointmentById = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { appointmentId } = req.params;
+    const { id } = req.params;
 
-    if (!appointmentId) {
+    if (!id)
       return res.status(400).json({ error: "Appointment ID is required" });
-    }
+
+    const user = await prisma.user.findUnique({
+      where: { uid: req.user?.uid },
+    });
+
+    if (!req.user || !user)
+      return res.status(401).send(new CustomResponse("Unauthorised"));
 
     // Fetch the appointment and include associated lab results
     const appointment = await prisma.appointment.findUnique({
-      where: { id: appointmentId },
-      include: {
-        labResults: true,
-      },
+      where: { id },
+      // also latest lab results
     });
 
-    if (!appointment) {
+    if (!appointment)
       return res.status(404).send(new CustomResponse("Appointment not found"));
-    }
 
     res.status(200).json({ appointment });
   } catch (error) {
@@ -108,9 +111,8 @@ export const createLabResult = async (
       where: { id: appointmentId },
     });
 
-    if (!appointment) {
+    if (!appointment)
       return res.status(404).send(new CustomResponse("Appointment not found"));
-    }
 
     // Create the lab result
     const labResult = await prisma.labResult.create({
@@ -131,16 +133,13 @@ export const createLabResult = async (
   }
 };
 
-
 export const getAllAppointments = async (
   req: CustomRequest,
   res: Response
 ): Promise<any> => {
   try {
     const appointments = await prisma.appointment.findMany({
-      include: {
-        labResults: true,
-      },
+      include: { LabResult: true },
     });
 
     res.status(200).json({ appointments });
@@ -149,4 +148,3 @@ export const getAllAppointments = async (
     res.status(500).send(new CustomResponse("Internal server error"));
   }
 };
-
