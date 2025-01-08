@@ -10,6 +10,6 @@ import { authToken } from "../middlewares/auth";
 router.use("/user", authToken, userRoutes);
 router.use("/conditions", authToken, conditionsRoutes);
 router.use("/appointments", authToken, appointmentRoutes);
-// router.use("/aggregate", authToken, aggregateRoutes);
+router.use("/aggregate", aggregateRoutes);
 
 export default router;

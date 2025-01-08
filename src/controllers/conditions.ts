@@ -5,6 +5,7 @@ import { prisma } from "../..";
 import { s3 } from "../libs/aws";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
+// import { uploadImageToS3 } from "../util/upload-s3";
 
 // Create a new condition and an associated appointment
 export const createCondition = async (
@@ -115,106 +116,82 @@ export async function getConditionById(
   }
 }
 
-export const addConditionWithAppointments = async (
-  req: CustomRequest,
-  res: Response
-): Promise<any> => {
-  try {
-    const { name, medication, symptoms, notes, appointments } = req.body;
-    const user = await prisma.user.findUnique({
-      where: { uid: req.user?.uid },
-    });
-    if (!user) return res.status(401).send(new CustomResponse("Unauthorised"));
-    const processedAppointments = await Promise.all(
-      appointments.map(async (appointment: any) => {
-        const appointmentImageKey = `appointments/${uuidv4()}.jpeg`;
-        const appointmentImageUrl = await uploadImageToS3(
-          appointment.image,
-          appointmentImageKey
-        );
-        // if (appointment.isDigital)
-        // {
-        //   const {symptoms,medication,doctorName,}
-        // }
+// export const addConditionWithAppointments = async (
+//   req: CustomRequest,
+//   res: Response
+// ): Promise<any> => {
+//   try {
+//     const { name, medication, symptoms, notes, appointments } = req.body;
+//     const user = await prisma.user.findUnique({
+//       where: { uid: req.user?.uid },
+//     });
+//     if (!user) return res.status(401).send(new CustomResponse("Unauthorised"));
+//     const processedAppointments = await Promise.all(
+//       appointments.map(async (appointment: any) => {
+//         const appointmentImageKey = `appointments/${uuidv4()}.jpeg`;
+//         const appointmentImageUrl = await uploadImageToS3(
+//           appointment.image,
+//           appointmentImageKey
+//         );
+//         // if (appointment.isDigital)
+//         // {
+//         //   const {symptoms,medication,doctorName,}
+//         // }
 
-        let labResult = null;
-        if (appointment.labResults && appointment.labResults.name) {
-          labResult = await prisma.labResult.findFirst({
-            where: { name: appointment.labResults.name },
-          });
+//         let labResult = null;
+//         if (appointment.labResults && appointment.labResults.name) {
+//           labResult = await prisma.labResult.findFirst({
+//             where: { name: appointment.labResults.name },
+//           });
 
-          if (labResult) {
-            await prisma.labResult.update({
-              where: { id: labResult.id },
-              data: { ...appointment.labResults },
-            });
-          } else {
-            await prisma.labResult.create({
-              data: { ...appointment.labResults },
-            });
-          }
-        }
+//           if (labResult) {
+//             await prisma.labResult.update({
+//               where: { id: labResult.id },
+//               data: { ...appointment.labResults },
+//             });
+//           } else {
+//             await prisma.labResult.create({
+//               data: { ...appointment.labResults },
+//             });
+//           }
+//         }
 
-        //TODO: Add to flask server OCR
+//         //TODO: Add to flask server OCR
 
-        return {
-          name: appointment.name,
-          appointmentDate: new Date(appointment.appointmentDate),
-          notes: appointment.notes,
-          imageUrl: appointmentImageUrl,
-          category: appointment.category,
-          userId: user.id,
-          labResults: labResult,
-        };
-      })
-    );
+//         return {
+//           name: appointment.name,
+//           appointmentDate: new Date(appointment.appointmentDate),
+//           notes: appointment.notes,
+//           imageUrl: appointmentImageUrl,
+//           category: appointment.category,
+//           userId: user.id,
+//           labResults: labResult,
+//         };
+//       })
+//     );
 
-    const condition = await prisma.condition.create({
-      data: {
-        name,
-        medication,
-        symptoms,
-        notes,
-        userId: user.id,
-        Appointments: {
-          create: processedAppointments,
-        },
-      },
-    });
+//     const condition = await prisma.condition.create({
+//       data: {
+//         name,
+//         medication,
+//         symptoms,
+//         notes,
+//         userId: user.id,
+//         Appointments: {
+//           create: processedAppointments,
+//         },
+//       },
+//     });
 
-    res.status(200).json({
-      message: "disease and appointments added successfully",
-      condition,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error adding condition and appointments" });
-  }
-};
-
-const uploadImageToS3 = async (
-  base64Image: string,
-  key: string
-): Promise<string> => {
-  const compressedImageBuffer = await sharp(Buffer.from(base64Image, "base64"))
-    .resize(500, 500, { fit: "inside" })
-    .webp({ quality: 80 })
-    .toBuffer();
-
-  if (!process.env.AWS_S3_BUCKET) {
-    throw new Error("AWS not configured");
-  }
-  const webpKey = key.replace(/\.\w+$/, ".webp");
-  const s3Params = {
-    Bucket: process.env.AWS_S3_BUCKET,
-    Key: webpKey,
-    Body: compressedImageBuffer,
-    ContentType: "image/webp",
-  };
-
-  const s3Response = await s3.upload(s3Params).promise();
-  return s3Response.Location;
-};
+//     res.status(200).json({
+//       message: "disease and appointments added successfully",
+//       condition,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Error adding condition and appointments" });
+//   }
+// };
 
 export const getConditions = async (
   req: CustomRequest,

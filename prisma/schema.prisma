@@ -101,3 +101,9 @@ enum AppointmentCategory {
   BI_ANNUALLY
   AS_NEEDED
 }
+
+model Doctor {
+  id   String @id @default(cuid())
+  name String
+  phNo String
+}

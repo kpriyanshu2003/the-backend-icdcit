@@ -6,8 +6,10 @@ import {
   getAppointmentById,
   getAllAppointments,
 } from "../controllers/appointments";
+import { FileHandler } from "../middlewares/fileHandler";
+import upload from "../libs/multer";
 
-router.post("/", createAppointment);
+router.post("/", upload.array("files", 10), FileHandler, createAppointment);
 router.get("/:id", getAppointmentById);
 router.post("/lab", createLabResult);
 router.get("/", getAllAppointments);
