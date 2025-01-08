@@ -1,16 +1,9 @@
-version: "3.9"
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000-3003:3000"
+      - "3000:3300"
     environment:
-      - NODE_ENV=production
-    env_file:
-      - .env
-    deploy:
-      replicas: 4
-    volumes:
-      - .:/digital-health-twin
+      - PORT=3000
