@@ -19,7 +19,6 @@ model User {
   gender    String?
   height    String
   weight    String
-
   bmi       Float
   email     String
   uid       String   @unique
@@ -33,54 +32,51 @@ model User {
 }
 
 model Condition {
-  id         String   @id @default(cuid())
-  name       String
-  medication String[]
-  symptoms   String[]
-  notes      String?
-  imageUrl   String?
-  createdAt  DateTime @default(now())
-
+  id           String        @id @default(cuid())
+  name         String
+  medication   String[]
+  symptoms     String[]
+  notes        String?
+  imageUrl     String?
+  createdAt    DateTime      @default(now())
   userId       String
   user         User          @relation(fields: [userId], references: [id])
   Appointments Appointment[]
 }
 
 model Appointment {
-  id              String              @id @default(cuid())
+  id              String               @id @default(cuid())
   name            String
   doctorName      String?
   appointmentDate DateTime
   notes           String?
   imageUrl        String?
-  createdAt       DateTime            @default(now())
-  category        AppointmentCategory
-
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  conditionId String?
-  Condition   Condition?  @relation(fields: [conditionId], references: [id])
-  labResults  LabResult[]
+  createdAt       DateTime             @default(now())
+  category        AppointmentCategory?
+  userId          String
+  isDigital       Boolean              @default(false)
+  user            User                 @relation(fields: [userId], references: [id])
+  conditionId     String?
+  Condition       Condition?           @relation(fields: [conditionId], references: [id])
+  labResults      LabResult[]
 }
 
 model LabResult {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   name           String
   value          Float
   prediction     Float?
   unit           String?
   referenceRange String?
-  createdAt      DateTime @default(now())
-
-  appointmentId String?
-  Appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  createdAt      DateTime     @default(now())
+  appointmentId  String?
+  Appointment    Appointment? @relation(fields: [appointmentId], references: [id])
 }
 
 model Recommendation {
   id        String   @id @default(cuid())
   message   String
   createdAt DateTime @default(now())
-
   userId String
   user   User   @relation(fields: [userId], references: [id])
 }
@@ -89,7 +85,6 @@ model RiskAssessment {
   id             String   @id @default(cuid())
   riskPercent    Float
   assessmentDate DateTime @default(now())
-
   userId String
   user   User   @relation(fields: [userId], references: [id])
 }

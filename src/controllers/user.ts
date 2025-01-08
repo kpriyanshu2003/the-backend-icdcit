@@ -8,10 +8,10 @@ export const createUser = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { name, age, height, weight, bmi } = req.body;
+    const { age, height, weight, bmi } = req.body;
     if (!req.user)
       return res.status(400).send(new CustomResponse("Invalid Token"));
-    if (!name || !age || !height || !weight || !bmi)
+    if ( !age || !height || !weight || !bmi)
       return res
         .status(400)
         .send(new CustomResponse("Give all the req fields."));
@@ -21,8 +21,7 @@ export const createUser = async (
     if (!email || !uid)
       return res.status(400).send(new CustomResponse("Invalid Token"));
     const user = await prisma.user.create({
-      data: {
-        name,
+      data: {  
         age,
         email,
         uid,
@@ -76,7 +75,6 @@ Promise<any> => {
 
     const user = await prisma.user.create({
       data: {
-        name,
         age,
         email,
         uid: password,

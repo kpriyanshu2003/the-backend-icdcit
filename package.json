@@ -8,7 +8,7 @@
   "scripts": {
     "start": "ts-node index.ts",
     "dev": "nodemon index.ts",
-    "postinstall": "prisma generate --schema ./src/prisma/schema.prisma",
+    "postinstall": "prisma generate --schema=./prisma/schema.prisma",
     "build": "esbuild index.ts --bundle --platform=node --outfile=dist/index.js"
   },
   "dependencies": {

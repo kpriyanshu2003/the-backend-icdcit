@@ -117,8 +117,7 @@ export const addConditionWithAppointments = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { userId, name, medication, symptoms, notes, appointments } =
-      req.body;
+    const { userId, name,  notes, appointments } =req.body;
     const processedAppointments = await Promise.all(
       appointments.map(async (appointment: any) => {
         const appointmentImageKey = `appointments/${uuidv4()}.jpeg`;
@@ -126,6 +125,10 @@ export const addConditionWithAppointments = async (
           appointment.image,
           appointmentImageKey
         );
+        if (appointment.isDigital)  
+        {
+          const {symptoms,medication,doctorName,}
+        }
 
         let labResult = null;
         if (appointment.labResults && appointment.labResults.name) {
@@ -144,6 +147,9 @@ export const addConditionWithAppointments = async (
             });
           }
         }
+
+        //TODO: Add to flask server OCR
+        
 
         return {
           name: appointment.name,
