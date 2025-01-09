@@ -28,7 +28,7 @@ export async function FileHandler(
       req.file.destination = finalPath;
       req.file.filename = compressedFilename;
       req.file.path = finalPath;
-      uploadToS3({ key: compressedFilename, filePath: finalPath });
+      // uploadToS3({ key: compressedFilename, filePath: finalPath });
       await fs.unlink(tempFilePath);
     }
 
@@ -48,7 +48,7 @@ export async function FileHandler(
           file.destination = finalPath;
           file.filename = compressedFilename;
           file.path = finalPath;
-          uploadToS3({ key: compressedFilename, filePath: finalPath });
+          // uploadToS3({ key: compressedFilename, filePath: finalPath });
           await fs.unlink(tempFilePath);
 
           return file;

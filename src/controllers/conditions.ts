@@ -63,10 +63,22 @@ export const createCondition = async (
     console.log(processedAppointment);
     console.log(processedLabResults);
 
+    const medication =
+      req.ocr && req.ocr.length > 0
+        ? req.ocr.flatMap((item) => item.medications)
+        : []; // Use flatMap to merge all medications from OCR responses into a single array
+
+    const symptoms =
+      req.ocr && req.ocr.length > 0
+        ? req.ocr.flatMap((item) => item.complaints)
+        : []; //
+
     const condition = await prisma.condition.create({
       data: {
         name,
         userId: user.id,
+        medication,
+        symptoms,
         Appointments: {
           createMany: {
             data: processedAppointment.map(
@@ -247,14 +259,12 @@ export const getConditions = async (
     const conditions = await prisma.condition.findMany({
       where: { userId: user.id },
     });
-    res
-      .status(200)
-      .send(
-        new CustomResponse("Conditions fetched", {
-          condition: conditions,
-          user: user,
-        })
-      );
+    res.status(200).send(
+      new CustomResponse("Conditions fetched", {
+        condition: conditions,
+        user: user,
+      })
+    );
   } catch (error) {
     console.error(error);
     res.status(500).send(new CustomResponse("Internal server error"));
