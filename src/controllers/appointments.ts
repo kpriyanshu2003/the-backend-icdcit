@@ -32,16 +32,16 @@ export const createAppointment = async (
       return res.status(401).send(new CustomResponse("Unauthorised"));
 
     // Create the appointment
-    const appointment = await prisma.appointment.create({
-      data: {
-        name,
-        appointmentDate: new Date(appointmentDate),
-        notes: notes || "",
-        imageUrl: imageUrl || "",
-        category,
-        userId: user.id,
-      },
-    });
+    // const appointment = await prisma.appointment.create({
+    //   data: {
+    //     name,
+    //     appointmentDate: new Date(appointmentDate),
+    //     notes: notes || "",
+    //     imageUrl: imageUrl || "",
+    //     category,
+    //     userId: user.id,
+    //   },
+    // });
 
     res
       .status(201)

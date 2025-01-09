@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import formData from "form-data";
 import fs from "fs";
+import { formatVitalsToLabResults } from "../util/ocr-to-labresult";
 // import { uploadImageToS3 } from "../util/upload-s3";
 
 // Create a new condition and an associated appointment
@@ -15,10 +16,10 @@ export const createCondition = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { name, appointmentDate } = req.body;
+    const { name, appointment } = req.body;
 
     // Validate required fields
-    if (!name || !appointmentDate)
+    if (!name || !appointment)
       return res
         .status(400)
         .send(new CustomResponse("Required fields:  name, appointmentDate"));
@@ -31,65 +32,62 @@ export const createCondition = async (
       return res.status(401).send(new CustomResponse("Unauthorisedd"));
     if (req.files === undefined)
       return res.status(400).send(new CustomResponse("Required Field: File"));
+    if (!req.ocr)
+      return res.status(400).send(new CustomResponse("Required Field: OCR"));
 
-    const fileProcessingPromises = (req.files as Express.Multer.File[]).map(
-      (file) => {
-        return new Promise(async (resolve, reject) => {
-          try {
-            let data = new FormData();
-            console.log(file.path);
-            const buffer = fs.readFileSync(file.path);
-            const blob = new Blob([buffer]);
-            data.append("file", blob, file.filename);
-
-            let config = {
-              method: "post",
-              maxBodyLength: Infinity,
-              url: "http://127.0.0.1:5000/process-prescription",
-              data: data,
-            };
-            const response = await axios.request(config);
-            console.log(response.data);
-            resolve(response.data);
-          } catch (error) {
-            console.error("Error processing file with axios:", error);
-            reject(error);
-          }
+    const doctors = await Promise.all(
+      req.ocr.map(async (item) => {
+        const doctor = await prisma.doctor.create({
+          data: {
+            name: item.doctorName,
+            phNo: item.doctorPhone,
+            designation: item.designation.join(", "),
+            rating: 0,
+          },
         });
-      }
+        return doctor.id;
+      })
     );
 
-    Promise.all(fileProcessingPromises)
-      .then((results) => {
-        console.log("All files processed successfully:", results);
-      })
-      .catch((error) => {
-        console.error("Error processing one or more files:", error);
-      });
-    // Create the condition and its associated appointment in a transaction
-    // const condition = await prisma.condition.create({
-    //   data: {
-    //     userId: user.id,
-    //     name,
-    //     medication,
-    //     symptoms,
-    //     notes,
-    //     imageUrl,
-    //     Appointments: {
-    //       create: {
-    //         name: `Follow-up for ${name}`,
-    //         doctorName,
-    //         appointmentDate: new Date(appointmentDate),
-    //         notes: appointmentNotes || "",
-    //         category: "AS_NEEDED",
-    //         userId: user.id,
-    //       },
-    //     },
-    //   },
-    //   include: {
-    //     Appointments: true,
-    //   },
-    // });
+    const processedAppointment = JSON.parse(appointment);
+    // processedLabResults will be array. use for loop
+    const processedLabResults = req.ocr.map((item) => {
+      return formatVitalsToLabResults(item.vitals);
+    });
+
+    const condition = await prisma.condition.create({
+      data: {
+        name,
+        userId: user.id,
+        Appointments: {
+          createMany: {
+            data: processedAppointment.map((item: any, index: number) => {
+              return {
+                name: item.name,
+                appointmentDate: item.appointmentDate,
+                // notes: item.notes,
+                // imageUrl: req.files[index].location,
+                // category: item.category,
+                userId: user.id,
+                isDigital: item.isDigital,
+                doctorId: doctors[index],
+                LabResult: {
+                  createMany: {
+                    data: processedLabResults[index].map((labResult: any) => {
+                      return {
+                        name: labResult.name,
+                        value: labResult.value,
+                        userId: user.id,
+                      };
+                    }),
+                  },
+                },
+              };
+            }),
+          },
+        },
+      },
+    });
 
     res.status(201).send(new CustomResponse("Condition created"));
   } catch (error) {

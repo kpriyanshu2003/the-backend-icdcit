@@ -48,7 +48,7 @@ model Condition {
 model Appointment {
   id              String               @id @default(cuid())
   name            String
-  appointmentDate DateTime
+  appointmentDate String
   notes           String?
   imageUrl        String?
   createdAt       DateTime             @default(now())
@@ -66,7 +66,7 @@ model Appointment {
 model Doctor {
   id          String        @id @default(cuid())
   name        String
-  phNo        String
+  phNo        String        @unique
   designation String
   rating      Int
   Appointment Appointment[]

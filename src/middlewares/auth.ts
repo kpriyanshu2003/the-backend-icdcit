@@ -16,6 +16,7 @@ export const authToken = async (
     let token = "";
     if (!req.headers.authorization)
       return res.status(401).send(new CustomResponse("Unauthorised"));
+    console.log(req.headers.authorization);
     token = req.headers.authorization.split(" ")[1];
     if (!token) return res.status(401).send(new CustomResponse("Unauthorised"));
     if (token === process.env.TOKEN) return next();
