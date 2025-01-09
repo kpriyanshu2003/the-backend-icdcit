@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.post("/", upload.array("file"), OCR, FileHandler, createCondition);
 router.get("/", getConditions);
-router.get("/:id", getConditionById);
+router.get("/c/:id", getConditionById);
 // needs fixing
 // router.post(
 //   "/chain",

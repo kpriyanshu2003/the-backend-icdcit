@@ -42,6 +42,7 @@ export const uploadToS3 = async ({
 
   try {
     const response = await client.send(command);
+    console.log(response);
   } catch (caught) {
     if (
       caught instanceof S3ServiceException &&

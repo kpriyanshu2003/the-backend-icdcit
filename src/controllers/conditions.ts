@@ -36,15 +36,19 @@ export const createCondition = async (
     if (!req.ocr)
       return res.status(400).send(new CustomResponse("Required Field: OCR"));
 
+    console.log(req.ocr);
+
     const doctors = await Promise.all(
       req.ocr.map(async (item) => {
-        const doctor = await prisma.doctor.create({
-          data: {
-            name: item.doctorName,
+        const doctor = await prisma.doctor.upsert({
+          where: { phNo: item.doctorPhone }, // Check based on the unique phone number
+          create: {
+            name: item.doctorName || "Anadibhai G Joshi",
             phNo: item.doctorPhone,
             designation: item.designation.join(", "),
             rating: 0,
           },
+          update: { name: item.doctorName || "Anadibhai G Joshi" },
         });
         return doctor.id;
       })
@@ -56,6 +60,9 @@ export const createCondition = async (
       return formatVitalsToLabResults(item.vitals);
     });
 
+    console.log(processedAppointment);
+    console.log(processedLabResults);
+
     const condition = await prisma.condition.create({
       data: {
         name,
@@ -63,34 +70,42 @@ export const createCondition = async (
         Appointments: {
           createMany: {
             data: processedAppointment.map(
-              (item: IStringToJson, index: number) => {
-                return {
-                  name: item.name,
-                  appointmentDate: item.date,
-                  // notes: item.notes,
-                  // imageUrl: req.files[index].location,
-                  // category: item.category,
-                  userId: user.id,
-                  // isDigital: item.isDigital,
-                  doctorId: doctors[index],
-                  LabResult: {
-                    createMany: {
-                      data: processedLabResults[index].map((labResult: any) => {
-                        return {
-                          name: labResult.name,
-                          value: labResult.value,
-                          userId: user.id,
-                        };
-                      }),
-                    },
-                  },
-                };
-              }
+              (item: IStringToJson, index: number) => ({
+                name: item.name,
+                appointmentDate: item.date,
+                // notes: item.notes,
+                // imageUrl: req.files[index]?.location, // Uncomment if needed
+                // category: item.category,
+                userId: user.id,
+                // isDigital: item.isDigital,
+                doctorId: doctors[index],
+              })
             ),
           },
         },
       },
     });
+
+    // Retrieve all created appointments
+    const appointments = await prisma.appointment.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: processedAppointment.length, // Fetch the same number of appointments that were created
+    });
+
+    // Create LabResults for each appointment
+    for (const [index, appointment] of appointments.entries()) {
+      if (processedLabResults[index] && processedLabResults[index].length > 0) {
+        await prisma.labResult.createMany({
+          data: processedLabResults[index].map((labResult: any) => ({
+            name: labResult.name,
+            value: labResult.value,
+            userId: user.id,
+            appointmentId: appointment.id, // Link LabResults to the appointment
+          })),
+        });
+      }
+    }
 
     res.status(201).send(new CustomResponse("Condition created"));
   } catch (error) {
@@ -231,9 +246,15 @@ export const getConditions = async (
     if (!user) return res.status(401).send(new CustomResponse("Unauthorisedd"));
     const conditions = await prisma.condition.findMany({
       where: { userId: user.id },
-      include: { Appointments: true },
     });
-    res.status(200).send(new CustomResponse("Conditions fetched", conditions));
+    res
+      .status(200)
+      .send(
+        new CustomResponse("Conditions fetched", {
+          condition: conditions,
+          user: user,
+        })
+      );
   } catch (error) {
     console.error(error);
     res.status(500).send(new CustomResponse("Internal server error"));
@@ -268,16 +289,18 @@ export const getlabResults = async (
 ): Promise<any> => {
   try {
     const user = await prisma.user.findUnique({
-      where: { uid: req.user?.id },
+      where: { uid: req.user?.uid },
     });
-
     if (!user)
       return res
         .status(401)
         .send(new CustomResponse("Condition: No lab results for the user."));
 
+    console.log("sdfsdfss", user.id);
     const labResults = await prisma.labResult.findMany({
       where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      distinct: ["name"],
     });
     res.status(200).send(new CustomResponse("Lab results fetched", labResults));
   } catch (error) {
