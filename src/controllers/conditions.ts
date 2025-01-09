@@ -4,6 +4,9 @@ import { CustomResponse } from "../@types/custom-response";
 import { prisma } from "../..";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
+import formData from "form-data";
+import fs from "fs";
 // import { uploadImageToS3 } from "../util/upload-s3";
 
 // Create a new condition and an associated appointment
@@ -12,27 +15,13 @@ export const createCondition = async (
   res: Response
 ): Promise<any> => {
   try {
-    const {
-      name,
-      medication,
-      symptoms,
-      notes,
-      imageUrl,
-      doctorName,
-      appointmentDate,
-      appointmentNotes,
-    } = req.body;
+    const { name, appointmentDate } = req.body;
 
     // Validate required fields
-    if (!name || !medication || !symptoms || !doctorName || !appointmentDate) {
+    if (!name || !appointmentDate)
       return res
         .status(400)
-        .send(
-          new CustomResponse(
-            "Required fields:  name, medication, symptoms, doctorName, appointmentDate"
-          )
-        );
-    }
+        .send(new CustomResponse("Required fields:  name, appointmentDate"));
 
     const user = await prisma.user.findUnique({
       where: { uid: req.user?.uid },
@@ -40,31 +29,67 @@ export const createCondition = async (
 
     if (!req.user || !user)
       return res.status(401).send(new CustomResponse("Unauthorisedd"));
+    if (req.files === undefined)
+      return res.status(400).send(new CustomResponse("Required Field: File"));
 
+    const fileProcessingPromises = (req.files as Express.Multer.File[]).map(
+      (file) => {
+        return new Promise(async (resolve, reject) => {
+          try {
+            let data = new FormData();
+            console.log(file.path);
+            const buffer = fs.readFileSync(file.path);
+            const blob = new Blob([buffer]);
+            data.append("file", blob, file.filename);
+
+            let config = {
+              method: "post",
+              maxBodyLength: Infinity,
+              url: "http://127.0.0.1:5000/process-prescription",
+              data: data,
+            };
+            const response = await axios.request(config);
+            console.log(response.data);
+            resolve(response.data);
+          } catch (error) {
+            console.error("Error processing file with axios:", error);
+            reject(error);
+          }
+        });
+      }
+    );
+
+    Promise.all(fileProcessingPromises)
+      .then((results) => {
+        console.log("All files processed successfully:", results);
+      })
+      .catch((error) => {
+        console.error("Error processing one or more files:", error);
+      });
     // Create the condition and its associated appointment in a transaction
-    const condition = await prisma.condition.create({
-      data: {
-        userId: user.id,
-        name,
-        medication,
-        symptoms,
-        notes,
-        imageUrl,
-        Appointments: {
-          create: {
-            name: `Follow-up for ${name}`,
-            doctorName,
-            appointmentDate: new Date(appointmentDate),
-            notes: appointmentNotes || "",
-            category: "AS_NEEDED",
-            userId: user.id,
-          },
-        },
-      },
-      include: {
-        Appointments: true,
-      },
-    });
+    // const condition = await prisma.condition.create({
+    //   data: {
+    //     userId: user.id,
+    //     name,
+    //     medication,
+    //     symptoms,
+    //     notes,
+    //     imageUrl,
+    //     Appointments: {
+    //       create: {
+    //         name: `Follow-up for ${name}`,
+    //         doctorName,
+    //         appointmentDate: new Date(appointmentDate),
+    //         notes: appointmentNotes || "",
+    //         category: "AS_NEEDED",
+    //         userId: user.id,
+    //       },
+    //     },
+    //   },
+    //   include: {
+    //     Appointments: true,
+    //   },
+    // });
 
     res.status(201).send(new CustomResponse("Condition created"));
   } catch (error) {
@@ -99,10 +124,10 @@ export async function getConditionById(
           select: {
             id: true,
             name: true,
-            doctorName: true,
             appointmentDate: true,
             notes: true,
             category: true,
+            Doctor: true,
           },
         },
       },

@@ -35,7 +35,6 @@ export const createAppointment = async (
     const appointment = await prisma.appointment.create({
       data: {
         name,
-        doctorName,
         appointmentDate: new Date(appointmentDate),
         notes: notes || "",
         imageUrl: imageUrl || "",

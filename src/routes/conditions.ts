@@ -10,7 +10,7 @@ import upload from "../libs/multer";
 import { FileHandler } from "../middlewares/fileHandler";
 const router = express.Router();
 
-router.post("/", upload.array("files", 10), FileHandler, createCondition);
+router.post("/", upload.array("file"), FileHandler, createCondition);
 router.get("/", getConditions);
 router.get("/:id", getConditionById);
 // needs fixing

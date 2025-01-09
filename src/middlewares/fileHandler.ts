@@ -14,16 +14,49 @@ export async function FileHandler(
   next: NextFunction
 ): Promise<any> {
   try {
-    if (!req.file)
-      return res.status(400).send(new CustomResponse("No file uploaded"));
+    if (!req.file && !req.files)
+      return res
+        .status(400)
+        .send(new CustomResponse("FileHandler: No file uploaded"));
 
-    const tempFilePath = req.file.path;
-    const compressedFilename = `${uuidv4()}.webp`;
-    const finalPath = path.join(__dirname, "../uploads", compressedFilename);
+    if (req.file) {
+      const tempFilePath = req.file.path;
+      const compressedFilename = `${uuidv4()}.webp`;
+      const finalPath = path.join(__dirname, "../uploads", compressedFilename);
 
-    await CompressImage(tempFilePath, finalPath);
-    await uploadToS3({ key: compressedFilename, filePath: finalPath });
-    await fs.unlink(tempFilePath);
+      await CompressImage(tempFilePath, finalPath);
+      req.file.destination = finalPath;
+      req.file.filename = compressedFilename;
+      req.file.path = finalPath;
+      // await uploadToS3({ key: compressedFilename, filePath: finalPath });
+      await fs.unlink(tempFilePath);
+    }
+
+    if (req.files) {
+      const files = req.files as Express.Multer.File[];
+      const compressedFiles = await Promise.all(
+        files.map(async (file) => {
+          const tempFilePath = file.path;
+          const compressedFilename = `${uuidv4()}.webp`;
+          const finalPath = path.join(
+            __dirname,
+            "../uploads",
+            compressedFilename
+          );
+
+          await CompressImage(tempFilePath, finalPath);
+          file.destination = finalPath;
+          file.filename = compressedFilename;
+          file.path = finalPath;
+          // await uploadToS3({ key: compressedFilename, filePath: finalPath });
+          await fs.unlink(tempFilePath);
+
+          return file;
+        })
+      );
+
+      req.files = compressedFiles;
+    }
 
     next();
   } catch (error) {

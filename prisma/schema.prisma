@@ -48,7 +48,6 @@ model Condition {
 model Appointment {
   id              String               @id @default(cuid())
   name            String
-  doctorName      String?
   appointmentDate DateTime
   notes           String?
   imageUrl        String?
@@ -60,12 +59,23 @@ model Appointment {
   conditionId     String?
   Condition       Condition?           @relation(fields: [conditionId], references: [id])
   LabResult       LabResult[]
+  doctorId        String?
+  Doctor          Doctor?              @relation(fields: [doctorId], references: [id])
+}
+
+model Doctor {
+  id          String        @id @default(cuid())
+  name        String
+  phNo        String
+  designation String
+  rating      Int
+  Appointment Appointment[]
 }
 
 model LabResult {
   id             String       @id @default(cuid())
   name           String
-  value          Float
+  value          String
   prediction     Float?
   unit           String?
   referenceRange String?
@@ -100,10 +110,4 @@ enum AppointmentCategory {
   QUARTERLY
   BI_ANNUALLY
   AS_NEEDED
-}
-
-model Doctor {
-  id   String @id @default(cuid())
-  name String
-  phNo String
 }
