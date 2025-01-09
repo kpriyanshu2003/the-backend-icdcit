@@ -56,12 +56,11 @@ export const createCondition = async (
 
     const processedAppointment = stringToJson(appointment);
     // processedLabResults will be array. use for loop
-    const processedLabResults = req.ocr.map((item) => {
-      return formatVitalsToLabResults(item.vitals);
-    });
+    // const processedLabResults = req.ocr.map((item) => {
+    //   return formatVitalsToLabResults(item.vitals);
+    // });
 
     console.log(processedAppointment);
-    console.log(processedLabResults);
 
     const medication =
       req.ocr && req.ocr.length > 0
@@ -86,7 +85,9 @@ export const createCondition = async (
                 name: item.name,
                 appointmentDate: item.date,
                 // notes: item.notes,
-                // imageUrl: req.files[index]?.location, // Uncomment if needed
+                imageUrl:
+                  "http://localhost:3300/public/" +
+                  (req.files as Express.Multer.File[])?.[index].filename, // Uncomment if needed
                 // category: item.category,
                 userId: user.id,
                 // isDigital: item.isDigital,
@@ -107,15 +108,16 @@ export const createCondition = async (
 
     // Create LabResults for each appointment
     for (const [index, appointment] of appointments.entries()) {
-      if (processedLabResults[index] && processedLabResults[index].length > 0) {
-        await prisma.labResult.createMany({
-          data: processedLabResults[index].map((labResult: any) => ({
-            name: labResult.name,
-            value: labResult.value,
-            userId: user.id,
-            appointmentId: appointment.id, // Link LabResults to the appointment
-          })),
-        });
+      const labResults = req.ocr?.[index]?.vitals.map((vital) => ({
+        name: vital.name,
+        value: vital.value,
+        unit: vital.unit,
+        userId: user.id,
+        appointmentId: appointment.id, // Link LabResults to the appointment
+      }));
+
+      if (labResults && labResults.length > 0) {
+        await prisma.labResult.createMany({ data: labResults });
       }
     }
 
@@ -142,6 +144,7 @@ export async function getConditionById(
       where: { uid: firebaseUser?.uid },
     });
     if (!user) return res.status(401).send(new CustomResponse("Unauthorised"));
+    console.log(user);
     // Validate the condition ID
 
     // Fetch the condition with its related appointment
@@ -259,10 +262,18 @@ export const getConditions = async (
     const conditions = await prisma.condition.findMany({
       where: { userId: user.id },
     });
+
+    console.log("sdfsdfss", user.id);
+    const labResults = await prisma.labResult.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      distinct: ["name"],
+    });
     res.status(200).send(
       new CustomResponse("Conditions fetched", {
         condition: conditions,
         user: user,
+        result: labResults,
       })
     );
   } catch (error) {

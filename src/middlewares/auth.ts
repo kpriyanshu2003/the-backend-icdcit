@@ -15,10 +15,15 @@ export const authToken = async (
   try {
     let token = "";
     if (!req.headers.authorization)
-      return res.status(401).send(new CustomResponse("Unauthorised"));
+      return res
+        .status(401)
+        .send(new CustomResponse("Middleware: Unauthorised"));
     console.log(req.headers.authorization);
     token = req.headers.authorization.split(" ")[1];
-    if (!token) return res.status(401).send(new CustomResponse("Unauthorised"));
+    if (!token)
+      return res
+        .status(401)
+        .send(new CustomResponse("Middleware: Unauthorised"));
     if (token === process.env.TOKEN) return next();
     const user = await firebaseAuth.verifyIdToken(token);
     if (user) {

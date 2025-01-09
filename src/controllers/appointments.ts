@@ -73,7 +73,7 @@ export const getAppointmentById = async (
     // Fetch the appointment and include associated lab results
     const appointment = await prisma.appointment.findUnique({
       where: { id },
-      // also latest lab results
+      include: { LabResult: true },
     });
 
     if (!appointment)
