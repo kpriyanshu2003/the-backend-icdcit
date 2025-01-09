@@ -8,6 +8,7 @@ import axios from "axios";
 import formData from "form-data";
 import fs from "fs";
 import { formatVitalsToLabResults } from "../util/ocr-to-labresult";
+import { IStringToJson, stringToJson } from "../util/string-to-json";
 // import { uploadImageToS3 } from "../util/upload-s3";
 
 // Create a new condition and an associated appointment
@@ -49,7 +50,7 @@ export const createCondition = async (
       })
     );
 
-    const processedAppointment = JSON.parse(appointment);
+    const processedAppointment = stringToJson(appointment);
     // processedLabResults will be array. use for loop
     const processedLabResults = req.ocr.map((item) => {
       return formatVitalsToLabResults(item.vitals);
@@ -61,29 +62,31 @@ export const createCondition = async (
         userId: user.id,
         Appointments: {
           createMany: {
-            data: processedAppointment.map((item: any, index: number) => {
-              return {
-                name: item.name,
-                appointmentDate: item.appointmentDate,
-                // notes: item.notes,
-                // imageUrl: req.files[index].location,
-                // category: item.category,
-                userId: user.id,
-                isDigital: item.isDigital,
-                doctorId: doctors[index],
-                LabResult: {
-                  createMany: {
-                    data: processedLabResults[index].map((labResult: any) => {
-                      return {
-                        name: labResult.name,
-                        value: labResult.value,
-                        userId: user.id,
-                      };
-                    }),
+            data: processedAppointment.map(
+              (item: IStringToJson, index: number) => {
+                return {
+                  name: item.name,
+                  appointmentDate: item.date,
+                  // notes: item.notes,
+                  // imageUrl: req.files[index].location,
+                  // category: item.category,
+                  userId: user.id,
+                  // isDigital: item.isDigital,
+                  doctorId: doctors[index],
+                  LabResult: {
+                    createMany: {
+                      data: processedLabResults[index].map((labResult: any) => {
+                        return {
+                          name: labResult.name,
+                          value: labResult.value,
+                          userId: user.id,
+                        };
+                      }),
+                    },
                   },
-                },
-              };
-            }),
+                };
+              }
+            ),
           },
         },
       },
@@ -268,7 +271,10 @@ export const getlabResults = async (
       where: { uid: req.user?.id },
     });
 
-    if (!user) return res.status(401).send(new CustomResponse("Unauthorised"));
+    if (!user)
+      return res
+        .status(401)
+        .send(new CustomResponse("Condition: No lab results for the user."));
 
     const labResults = await prisma.labResult.findMany({
       where: { userId: user.id },

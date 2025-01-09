@@ -5,6 +5,6 @@ import { FileHandler } from "../middlewares/fileHandler";
 import { OCR } from "../middlewares/ocr";
 const router = express.Router();
 
-router.post("/upload", upload.array("file"), OCR, FileHandler, Aggr);
+router.post("/upload", upload.array("file"), FileHandler, Aggr);
 
 export default router;
