@@ -129,8 +129,25 @@ export const getAllAppointments = async (
   res: Response
 ): Promise<any> => {
   try {
+    if (!req.user)
+      return res
+        .status(401)
+        .send(new CustomResponse("Appointment: Unauthorised"));
+    const user = await prisma.user.findUnique({
+      where: { uid: req.user?.uid },
+    });
+    if (!user)
+      return res
+        .status(401)
+        .send(new CustomResponse("Appointment: Unauthorised"));
     const appointments = await prisma.appointment.findMany({
-      include: { LabResult: true },
+      where: { userId: user.id },
+      select: {
+        id: true,
+        name: true,
+        appointmentDate: true,
+        Doctor: true,
+      },
     });
 
     res.status(200).json({ appointments });

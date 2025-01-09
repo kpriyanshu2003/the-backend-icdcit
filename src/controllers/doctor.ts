@@ -28,6 +28,55 @@ export async function getDoctor(
     res.status(500).send(new CustomResponse("Internal Server Error"));
   }
 }
+
+export async function getAllDoctors(
+  req: CustomRequest,
+  res: Response
+): Promise<any> {
+  try {
+    const doctorsWithConditions = await prisma.doctor.findMany({
+      include: {
+        Appointment: {
+          include: {
+            Condition: true,
+          },
+        },
+      },
+    });
+
+    const formattedResponse = doctorsWithConditions.map((doctor) => {
+      const diseases = [
+        ...new Set(
+          doctor.Appointment.flatMap((appointment) =>
+            appointment.Condition ? [appointment.Condition.name] : []
+          )
+        ),
+      ];
+
+      const uniquePatients = new Set(
+        doctor.Appointment.map((appointment) => appointment.userId)
+      );
+
+      return {
+        id: doctor.id,
+        name: doctor.name,
+        phNo: doctor.phNo,
+        designation: doctor.designation,
+        rating: doctor.rating,
+        diseases: diseases,
+        patients: uniquePatients.size,
+      };
+    });
+
+    res
+      .status(200)
+      .send(new CustomResponse("Doctors fetched", formattedResponse));
+  } catch (error) {
+    console.error("Error fetching doctors with conditions:", error);
+    res.status(500).send(new CustomResponse("Internal Server Error"));
+  }
+}
+
 export async function updateDoctor(
   req: CustomRequest,
   res: Response
