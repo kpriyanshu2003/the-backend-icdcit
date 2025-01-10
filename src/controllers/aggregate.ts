@@ -66,7 +66,12 @@ export async function healthRecommendation(
   return res.status(200).send(
     new CustomResponse("Fetched Health Recommendations", {
       riskFactor: appointments,
-      recommendations: healthRecommendation,
+      recommendations: {
+        lifestyle_modifications:
+          healthRecommendation["Lifestyle Modifications"],
+        medication_management: healthRecommendation["Medication Management"],
+        monitor_vital_signs: healthRecommendation["Monitor Vital Signs"],
+      },
     })
   );
 }

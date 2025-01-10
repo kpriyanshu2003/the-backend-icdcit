@@ -68,6 +68,7 @@ export async function getAllDoctors(
       };
     });
 
+    formattedResponse.sort((a, b) => b.rating - a.rating);
     res
       .status(200)
       .send(new CustomResponse("Doctors fetched", formattedResponse));
@@ -99,7 +100,17 @@ export async function updateDoctor(
 
     const updatedDoctor = await prisma.doctor.updateMany({
       where: { id, Appointment: { some: { userId: user.id } } },
-      data: { name, designation, rating },
+      data: {
+        name,
+        designation,
+        rating: rating ? { increment: 1 } : { decrement: 1 },
+      },
+    });
+
+    // Ensure rating does not go below 0
+    await prisma.doctor.updateMany({
+      where: { id, rating: { lt: 0 } },
+      data: { rating: 0 },
     });
     res.status(202).send(new CustomResponse("Doctor Updated", updatedDoctor));
   } catch (error) {

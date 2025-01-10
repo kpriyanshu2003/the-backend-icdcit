@@ -86,7 +86,7 @@ export const createCondition = async (
                 appointmentDate: item.date,
                 // notes: item.notes,
                 imageUrl:
-                  "http://localhost:3300/public/" +
+                  "http://14.139.221.186//public/" +
                   (req.files as Express.Multer.File[])?.[index].filename, // Uncomment if needed
                 // category: item.category,
                 userId: user.id,
@@ -164,7 +164,49 @@ export async function getConditionById(
       },
     });
 
-    res.status(200).send(new CustomResponse("Condition fetched", condition));
+    const doctors = await prisma.doctor.findMany({
+      where: {
+        Appointment: {
+          some: {
+            Condition: {
+              name: condition?.name,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        phNo: true,
+        designation: true,
+        rating: true,
+        Appointment: {
+          select: {
+            Condition: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        rating: "desc", // Sort doctors by their rating in descending order
+      },
+    });
+
+    // Format the response to include only unique diseases for each doctor
+    const response = doctors.map((doctor) => ({
+      id: doctor.id,
+      name: doctor.name,
+      phNo: doctor.phNo,
+      designation: doctor.designation,
+      rating: doctor.rating,
+    }));
+
+    res
+      .status(200)
+      .send(new CustomResponse("Condition fetched", { condition, response }));
   } catch (error) {
     console.error(error);
     res.status(500).send(new CustomResponse("Internal server error"));
