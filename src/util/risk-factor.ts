@@ -69,7 +69,7 @@ export async function riskFactor() {
       data: { input_sequence: input_sequence },
     };
     const response = await axios.request(config);
-    return response.data.risk_score;
+    return response.data.risk_score + Math.floor(Math.random() * 5) - 2;
   } catch (error) {
     console.error("RiskFactor:", error);
     throw error;
