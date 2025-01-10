@@ -11,7 +11,7 @@ export const processFile = async (file: Express.Multer.File) => {
     const config = {
       method: "post",
       maxBodyLength: Infinity,
-      url: "http://127.0.0.1:5000/process-prescription",
+      url: "http://127.0.0.1:5002/process-prescription",
       headers: { ...data.getHeaders() },
       data: data,
     };

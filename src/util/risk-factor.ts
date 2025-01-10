@@ -62,7 +62,7 @@ export async function riskFactor() {
     let config = {
       method: "post",
       maxBodyLength: Infinity,
-      url: "http://127.0.0.1:5002/calculate-risk",
+      url: "http://127.0.0.1:5000/calculate-risk",
       headers: {
         "Content-Type": "application/json",
       },
