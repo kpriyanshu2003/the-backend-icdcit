@@ -60,6 +60,6 @@ export function transformData(input: {
     weight: parseFloat(input.body_params.weight),
     height: parseFloat(input.body_params.height),
   };
-
+  console.log(vitals);
   return { vitals, body_params };
 }
