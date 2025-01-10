@@ -12,6 +12,7 @@ export async function getHealthRecommendations(vitals: any) {
       data,
     };
     const response = await axios.request(config);
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("HealthRecommendation:", error);

@@ -86,7 +86,7 @@ export const createCondition = async (
                 appointmentDate: item.date,
                 // notes: item.notes,
                 imageUrl:
-                  "http://14.139.221.186//public/" +
+                  "https://icdcit.iotkiit.in/public/" +
                   (req.files as Express.Multer.File[])?.[index].filename, // Uncomment if needed
                 // category: item.category,
                 userId: user.id,
